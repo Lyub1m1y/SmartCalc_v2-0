@@ -3,7 +3,7 @@
 #include "s21_validator.c"
 
 int main() {
-  char str[] = "Hello world!";
-  printf("%s", str);
+  char str[] = "hfghgjl";
+  printf("%d", s21_validator(str));
   return 0;
 }
