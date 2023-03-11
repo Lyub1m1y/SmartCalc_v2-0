@@ -1,7 +1,14 @@
 #ifndef VIEW_H
 #define VIEW_H
 
+#include <QDebug>
+#include <QDesktopServices>
 #include <QMainWindow>
+#include <QMessageBox>
+#include <QString>
+#include <QUrl>
+#include <QVector>
+#include <string>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class View; }

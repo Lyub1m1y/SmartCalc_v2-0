@@ -11,11 +11,9 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <!-- <string>MainWindow</string> -->
    <string>КальКулятор</string>
-<!-- TODO -->
   </property>
-  <!-- <widget class="QWidget" name="centralwidget">
+  <widget class="QWidget" name="centralwidget">
    <widget class="QTabWidget" name="tabWidget">
     <property name="enabled">
      <bool>true</bool>
@@ -1192,9 +1190,9 @@ QPushButton:pressed {
        </item>
       </layout>
      </widget>
-     <widget class="QCustomPlot" name="widget" native="true">
+     <!-- <widget class="QCustomPlot" name="widget" native="true">
       <property name="enabled">
-       <bool>true</bool>
+       <bool>false</bool>
       </property>
       <property name="geometry">
        <rect>
@@ -1204,7 +1202,7 @@ QPushButton:pressed {
         <height>211</height>
        </rect>
       </property>
-     </widget>
+     </widget> -->
      <widget class="QPushButton" name="Button_Grath">
       <property name="geometry">
        <rect>
@@ -2152,9 +2150,9 @@ QPushButton:pressed {
      <height>22</height>
     </rect>
    </property>
-  </widget>-->
+  </widget>
   <widget class="QStatusBar" name="statusbar"/>
- </widget> 
+ </widget>
  <customwidgets>
   <customwidget>
    <class>QCustomPlot</class>

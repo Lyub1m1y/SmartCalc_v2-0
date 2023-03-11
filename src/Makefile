@@ -1,12 +1,12 @@
 .PHONY: all rebuild install uninstall clean dvi dist tests
-CC = gcc
+CC = g++ #TODO need change to gcc
 GCOV = -fprofile-arcs -ftest-coverage
 # CFLAGS = -lstdc++ -lgtest -std=c++17 -Wall -Werror -Wextra
 CFLAGS = -lstdc++ -lgtest -Wall -Werror -Wextra
 # EXE = unit_tests
 # TFN = unit_tests.cc
 EXE = main
-TFN = main.c
+TFN = main.cc
 
 
 all: clean test
