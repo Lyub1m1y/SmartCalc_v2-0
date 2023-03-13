@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <stack>
 #include <string>
 
 #ifndef OK
@@ -50,42 +51,46 @@ typedef enum type_t {
  */
 
 // stack preEntity
-typedef struct stack_tt {
+typedef struct Node {
   double value;
   int priority;
   type_t type;
-  struct stack_tt* next;
-} stack_tt;
+  // struct stack_tt* next;
+} Node;
 
 namespace s21 {
 class ModelDefault {
  public:
   // ModelDefault(std::string str);
   // ~ModelDefault(){};
-
+  using stack_tt = std::stack<Node>;
   ModelDefault() { ; }
 
   ~ModelDefault() { ; }  // TODO если не нужен будет то надо убрать
 
-  int entryPoint(char* text, double* double_result, double x_value) { // TODO rename -> calculate
+  int entryPoint(char* text, double* double_result,
+                 double x_value) {  // TODO rename -> MainCalculate
     int status = OK;
-    if (this->validator(text) == OK) {
+    if (validator(text) == OK) {
+      // stack_tt* reverseTokens = NULL;
       stack_tt* reverseTokens = NULL;
-      this->parser(text, &reverseTokens, x_value);
+      parser(text, reverseTokens, x_value);
       stack_tt* tokens = NULL;
-      this->stack_reverse_(&tokens, &reverseTokens);
+      stack_reverse_(&tokens, &reverseTokens);
 
       stack_tt* reverseOutput = NULL;
-      this->reversePolishNotation(tokens, &reverseOutput);
+      reversePolishNotation(tokens, &reverseOutput);
       stack_tt* output = NULL;
-      this->stack_reverse_(&output, &reverseOutput);
+      stack_reverse_(&output, &reverseOutput);
 
-      this->calculate(&output);
-      *double_result = output->value;
-      this->stack_free_(reverseTokens);
-      this->stack_free_(tokens);
-      this->stack_free_(reverseOutput);
-      this->stack_free_(output);
+      calculate(&output);
+      *double_result = output->top().value;
+      // TODO need clear memory
+      // stack_free_(reverseTokens);
+      // (*reverseTokens).;
+      // stack_free_(tokens);
+      // stack_free_(reverseOutput);
+      // stack_free_(output);
     } else {
       status = FAIL;
     }
@@ -115,11 +120,12 @@ class ModelDefault {
     return status;
   }
 
-  void parser(char* text, stack_tt** reverseTokens, double x_value) {
+  void parser(char* text, stack_tt* reverseTokens, double x_value) {
     int text_length = strlen(text);
     int flagPow = 0;
     int flagOpenBracket = 0;
     for (int i = 0; i < text_length; i++) {
+      Node node = {0.0, 0, NUMBER};
       if (isdigit(text[i]) != 0) {
         char number[255] = {0};
         double value = 0.0;
@@ -130,132 +136,216 @@ class ModelDefault {
           i++;
         }
         i--;
-        sscanf(number, "%lf", &value);
-        stack_push_(value, 0, NUMBER, reverseTokens);
+        sscanf(number, "%lf", &value);  // TODO sscanf need change
+        node = {value, 0, NUMBER};
+        reverseTokens->push(node);
+        // stack_push_(value, 0, NUMBER, reverseTokens); TODO deleate
         setCloseBracket(&text[i], reverseTokens, &flagPow, flagOpenBracket);
       } else if (text[i] == 'x') {
-        stack_push_(x_value, 0, NUMBER, reverseTokens);
+        node = {x_value, 0, NUMBER};
+        reverseTokens->push(node);
+        // stack_push_(x_value, 0, NUMBER, reverseTokens);
         setCloseBracket(&text[i], reverseTokens, &flagPow, flagOpenBracket);
       } else if (text[i] == '(') {
-        stack_push_(0, 0, OPENBRACKET, reverseTokens);
+        node = {0, 0, OPENBRACKET};
+        reverseTokens->push(node);
+        // stack_push_(0, 0, OPENBRACKET, reverseTokens);
         if (flagPow != 0) {
           flagOpenBracket++;
         }
       } else if (text[i] == ')') {
-        stack_push_(0, 0, CLOSEBRACKET, reverseTokens);
+        node = {0, 0, CLOSEBRACKET};
+        reverseTokens->push(node);
+        // stack_push_(0, 0, CLOSEBRACKET, reverseTokens);
         if (flagOpenBracket > 0) {
           flagOpenBracket--;
         }
         while (flagPow > 0) {
-          stack_push_(0, 0, CLOSEBRACKET, reverseTokens);
+          node = {0, 0, CLOSEBRACKET};
+          reverseTokens->push(node);
+          // stack_push_(0, 0, CLOSEBRACKET, reverseTokens);
           flagPow--;
         }
       } else if (text[i] == '*') {
-        stack_push_(0, 2, MUL, reverseTokens);
+        node = {0, 2, MUL};
+        reverseTokens->push(node);
+        // stack_push_(0, 2, MUL, reverseTokens);
       } else if (text[i] == '/') {
-        stack_push_(0, 2, DIV, reverseTokens);
+        node = {0, 2, DIV};
+        reverseTokens->push(node);
+        // stack_push_(0, 2, DIV, reverseTokens);
       } else if (text[i] == 'm') {
-        stack_push_(0, 2, MOD, reverseTokens);
+        node = {0, 2, MOD};
+        reverseTokens->push(node);
+        // stack_push_(0, 2, MOD, reverseTokens);
         i += 2;
       } else if (text[i] == '^') {
-        stack_push_(0, 3, POW, reverseTokens);
-        stack_push_(0, 0, OPENBRACKET, reverseTokens);
+        node = {0, 3, POW};
+        reverseTokens->push(node);
+        // stack_push_(0, 3, POW, reverseTokens);
+        node = {0, 0, OPENBRACKET};
+        reverseTokens->push(node);
+        // stack_push_(0, 0, OPENBRACKET, reverseTokens);
         flagPow++;
       } else if (text[i] == 's') {
         if (text[i + 1] == 'i') {
-          stack_push_(0, 4, SIN, reverseTokens);
+          node = {0, 4, SIN};
+          reverseTokens->push(node);
+          // stack_push_(0, 4, SIN, reverseTokens);
           i += 2;
         } else if (text[i + 1] == 'q') {
-          stack_push_(0, 4, SQRT, reverseTokens);
+          node = {0, 4, SQRT};
+          reverseTokens->push(node);
+          // stack_push_(0, 4, SQRT, reverseTokens);
           i += 3;
         }
       } else if (text[i] == 'l') {
         if (text[i + 1] == 'n') {
-          stack_push_(0, 4, LN, reverseTokens);
+          node = {0, 4, LN};
+          reverseTokens->push(node);
+          // stack_push_(0, 4, LN, reverseTokens);
           i += 1;
         } else if (text[i + 1] == 'o') {
-          stack_push_(0, 4, LOG, reverseTokens);
+          node = {0, 4, LOG};
+          reverseTokens->push(node);
+          // stack_push_(0, 4, LOG, reverseTokens);
           i += 2;
         }
       } else if (text[i] == 'c') {
-        stack_push_(0, 4, COS, reverseTokens);
+        node = {0, 4, COS};
+        reverseTokens->push(node);
+        // stack_push_(0, 4, COS, reverseTokens);
         i += 2;
       } else if (text[i] == 't') {
-        stack_push_(0, 4, TAN, reverseTokens);
+        node = {0, 4, TAN};
+        reverseTokens->push(node);
+        // stack_push_(0, 4, TAN, reverseTokens);
         i += 2;
       } else if (text[i] == 'a') {
         if (text[i + 1] == 's') {
-          stack_push_(0, 4, ASIN, reverseTokens);
+          node = {0, 4, ASIN};
+          reverseTokens->push(node);
+          // stack_push_(0, 4, ASIN, reverseTokens);
           i += 3;
         } else if (text[i + 1] == 'c') {
-          stack_push_(0, 4, ACOS, reverseTokens);
+          node = {0, 4, ACOS};
+          reverseTokens->push(node);
+          // stack_push_(0, 4, ACOS, reverseTokens);
           i += 3;
         } else if (text[i + 1] == 't') {
-          stack_push_(0, 4, ATAN, reverseTokens);
+          node = {0, 4, ATAN};
+          reverseTokens->push(node);
+          // stack_push_(0, 4, ATAN, reverseTokens);
           i += 3;
         }
       } else if (text[i] == '+') {
         if ((i == 0) || (text[i - 1] == '(')) {
-          stack_push_(0, 1, UNPLUS, reverseTokens);
+          node = {0, 1, UNPLUS};
+          reverseTokens->push(node);
+          // stack_push_(0, 1, UNPLUS, reverseTokens);
         } else {
-          stack_push_(0, 1, PLUS, reverseTokens);
+          node = {0, 1, PLUS};
+          reverseTokens->push(node);
+          // stack_push_(0, 1, PLUS, reverseTokens);
         }
       } else if (text[i] == '-') {
         if ((i == 0) || (text[i - 1] == '(')) {
-          stack_push_(0, 1, UNMINUS, reverseTokens);
+          node = {0, 1, UNMINUS};
+          reverseTokens->push(node);
+          // stack_push_(0, 1, UNMINUS, reverseTokens);
         } else {
-          stack_push_(0, 1, MINUS, reverseTokens);
+          node = {0, 1, MINUS};
+          reverseTokens->push(node);
+          // stack_push_(0, 1, MINUS, reverseTokens);
         }
       }
     }
   }
 
-  void reversePolishNotation(stack_tt* stack, stack_tt** numStack) {
-    stack_tt* supportStack = {0};
-    while (stack) {
-      if (stack_peekType_(stack) != CLOSEBRACKET) {
-        if (stack_peekType_(stack) == NUMBER) {
-          stack_push_(stack->value, stack->priority, stack_peekType_(stack),
-                      numStack);
+  void reversePolishNotation(stack_tt* stack, stack_tt* numStack) {
+    stack_tt* supportStack = nullptr;
+    for (int i = 0; i < stack->size(); i++) {
+      // while (stack) {
+      Node node = {0.0, 0, NUMBER};
+      if (stack->top().type != CLOSEBRACKET) {
+        if (stack->top().type == NUMBER) {
+          node = {stack->top().value, stack->top().priority, stack->top().type};
+          numStack->push(node);
+          // stack_push_(stack->top().value, stack->top().priority,
+          //             stack->top().type, numStack);
         } else {
           while (1) {
-            if ((checkSupport(supportStack, stack->priority)) ||
-                stack_peekType_(stack) == OPENBRACKET) {
-              stack_push_(stack->value, stack->priority, stack_peekType_(stack),
-                          &supportStack);
+            if ((checkSupport(supportStack, stack->top().priority)) ||
+                stack->top().type == OPENBRACKET) {
+              node = {stack->top().value, stack->top().priority,
+                      stack->top().type};
+              supportStack->push(node);
+              // stack_push_(stack->top().value, stack->top().priority,
+              //             stack->top().type, &supportStack);
               break;
             } else {
-              stack_push_(supportStack->value, supportStack->priority,
-                          supportStack->type, numStack);
-              stack_pop_(&supportStack);
+              node = {supportStack->top().value, supportStack->top().priority,
+                      supportStack->top().type};
+              numStack->push(node);
+              // stack_push_(supportStack->top().value,
+              //             supportStack->top().priority,
+              //             supportStack->top().type, numStack);
+              supportStack->pop();
+              // stack_pop_(&supportStack);
             }
           }
         }
       } else {
-        while (supportStack->type != OPENBRACKET) {
-          stack_push_(supportStack->value, supportStack->priority,
-                      supportStack->type, numStack);
-          stack_pop_(&supportStack);
+        while (supportStack->top().type != OPENBRACKET) {
+          node = {supportStack->top().value, supportStack->top().priority,
+                  supportStack->top().type};
+          numStack->push(node);
+          // stack_push_(supportStack->top().value,
+          // supportStack->top().priority,
+          //             supportStack->top().type, numStack);
+          supportStack->pop();
+          // stack_pop_(&supportStack);
         }
-        stack_pop_(&supportStack);
+        supportStack->pop();
+        // stack_pop_(&supportStack);
       }
-      stack = stack->next;
+      // stack = stack->next;
     }
-    while (supportStack) {
-      stack_push_(supportStack->value, supportStack->priority,
-                  supportStack->type, numStack);
-      stack_pop_(&supportStack);
+    for (int i = 0; i < supportStack->size(); i++) {
+      Node node = {supportStack->top().value, supportStack->top().priority,
+                   supportStack->top().type};
+      numStack->push(node);
+      // stack_push_(supportStack->top().value, supportStack->top().priority,
+      //             supportStack->top().type, numStack);
+      supportStack->pop();
+      // stack_pop_(&supportStack);
     }
+    // while (supportStack) {
+    //   stack_push_(supportStack->value, supportStack->priority,
+    //               supportStack->type, numStack);
+    //   stack_pop_(&supportStack);
+    // }
   }
 
-  void calculate(stack_tt** stack) {
-    while ((*stack)->next != NULL) {
-      stack_tt *tmp_1 = {0}, *tmp_2 = {0}, *tmp_3 = {0};
-      tmp_1 = *stack;
-      tmp_2 = tmp_1->next;
-      if (tmp_2->next != NULL) {
-        tmp_3 = tmp_2->next;
-      }
+  void calculate(stack_tt* stack) {
+    for (int i = 0; i < stack->size(); i++) {
+      // while ((*stack)->next != NULL) {
+      // Node node = {0.0, 0, NUMBER};
+      // Node* tmp_3 = {&node};
+      Node* tmp_1 = &stack->top();
+      // give penultimate element stack for tmp_2
+      Node tmp = *tmp_1;
+      stack->pop();
+      Node* tmp_2 = &stack->top();
+      stack->push(tmp);
+      ;
+      // if (tmp_2->next != NULL) {
+      // give penultimate element stack for tmp_3
+      Node tmp = *tmp_2;
+      stack->pop();
+      Node* tmp_3 = &stack->top();
+      stack->push(tmp);
+      // }
       if (tmp_2->type == NUMBER) {
         while (!tmp_3->priority) {
           tmp_1 = tmp_2;
@@ -270,6 +360,7 @@ class ModelDefault {
       } else {
         calcFuncs(stack, tmp_1, tmp_2);
       }
+      // }
     }
   }
 
@@ -368,11 +459,13 @@ class ModelDefault {
     return status;
   }
 
-  void setCloseBracket(char* text, stack_tt** input, int* flagPow,
+  void setCloseBracket(char* text, stack_tt* input, int* flagPow,
                        int flagOpenBracket) {
     if (*(text + 1) != '^' && flagPow != 0 && flagOpenBracket == 0) {
       while (*flagPow > 0) {
-        stack_push_(0, 0, CLOSEBRACKET, input);
+        // stack_push_(0, 0, CLOSEBRACKET, input); TODO deleate
+        Node node = {0.0, 0, CLOSEBRACKET};
+        input->push(node);
         *flagPow = *flagPow - 1;
       }
     }
@@ -555,40 +648,53 @@ class ModelDefault {
     }
     return status;
   }
+  // TODO remove
+  // void stack_push_(double value, int priority, type_t type, stack_tt** stack)
+  // {
+  //   stack_tt* newStack = (stack_tt*)malloc(sizeof(stack_tt));
+  //   if (newStack != NULL) {
+  //     newStack->value = value;
+  //     newStack->priority = priority;
+  //     newStack->type = type;
+  //     newStack->next = *stack;
+  //     *stack = newStack;
+  //   }
+  // }
+  // TODO remove
 
-  void stack_push_(double value, int priority, type_t type, stack_tt** stack) {
-    stack_tt* newStack = (stack_tt*)malloc(sizeof(stack_tt));
-    if (newStack != NULL) {
-      newStack->value = value;
-      newStack->priority = priority;
-      newStack->type = type;
-      newStack->next = *stack;
-      *stack = newStack;
+  // void stack_pop_(stack_tt** last) {
+  //   if (*last != NULL) {
+  //     stack_tt* tmp = (*last)->next;
+  //     free(*last);
+  //     *last = tmp;
+  //   }
+  // }
+
+  void stack_reverse_(
+      stack_tt* stack,
+      stack_tt* reverse_stack) {  // TODO delete unnecessary comments
+    for (int i = 0; i < reverse_stack->size(); i++) {
+      Node node = {reverse_stack->top().value, reverse_stack->top().priority,
+                   reverse_stack->top().type};
+      stack->push(node);
+      // stack_push_((*reverse_stack)->value, (*reverse_stack)->priority,
+      //             (*reverse_stack)->type, stack);
+      reverse_stack->pop();
+      // stack_pop_(reverse_stack);
     }
+    // while (*reverse_stack) {
+    //   stack_push_((*reverse_stack)->value, (*reverse_stack)->priority,
+    //               (*reverse_stack)->type, stack);
+    //   stack_pop_(reverse_stack);
+    // }
   }
 
-  void stack_pop_(stack_tt** last) {
-    if (*last != NULL) {
-      stack_tt* tmp = (*last)->next;
-      free(*last);
-      *last = tmp;
-    }
-  }
-
-  void stack_reverse_(stack_tt** stack, stack_tt** reverse_stack) {
-    while (*reverse_stack) {
-      stack_push_((*reverse_stack)->value, (*reverse_stack)->priority,
-                  (*reverse_stack)->type, stack);
-      stack_pop_(reverse_stack);
-    }
-  }
-
-  type_t stack_peekType_(stack_tt* stack) { return stack->type; }
+  // type_t stack_peekType_(stack_tt* stack) { return stack->type; }
 
   int checkSupport(stack_tt* helpStack, int priority) {
     int numStack = 0;
-    if (helpStack != NULL) {
-      if (priority > helpStack->priority) {
+    if (!(helpStack->empty())) {
+      if (priority > helpStack->top().priority) {
         numStack = 1;
       }
     } else {
@@ -597,17 +703,20 @@ class ModelDefault {
     return numStack;
   }
 
-  stack_tt* stack_free_(stack_tt* list) {
-    while (list != NULL) {
-      stack_tt* temporary = list;
-      list = list->next;
-      free(temporary);
+  void stack_free_(std::stack<stack_tt>* stack_) {
+    // while (list != NULL) {
+    //   stack_tt* temporary = list;
+    //   list = list->next;
+    //   free(temporary);
+    // }
+    // return NULL;
+    while (!(*stack_).empty()) {
+      (*stack_).pop();
     }
-    return NULL;
   }
 
  private:
-  std::string str_;
+  // std::string str_; TODO remove
 };
 
 }  // namespace s21
